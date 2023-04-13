@@ -1,5 +1,7 @@
 # ShaRecipes
 
+Repositori yang digunakan untuk memenuhi penugasan mini project kampus merdeka pada program Studi Independen 2023 Complete Front-End Engineer Career With ReactJS oleh mitra Alterra Academy
+
 ## Fitur
 
 - Fitur menampilkan resep dari api & resep sendiri
