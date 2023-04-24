@@ -1,27 +1,75 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
 import { gql, useQuery, useMutation } from "@apollo/client";
-import { nanoid } from "nanoid";
+import { useLocation, useParams } from "react-router-dom";
 
-const INSERT_RECIPE = gql`
-  mutation InsertRecipe($object: recipes_insert_input!) {
-    insert_recipes_one(object: $object) {
+const GET_RECIPE = gql`
+  query GetRecipe($id: String!) {
+    recipes(where: { id: { _eq: $id } }) {
+      aggregateLikes
+      cuisines
+      dishTypes
+      extendedIngredients
       id
+      image
+      instructions
+      readyInMinutes
+      servings
+      summary
       title
     }
   }
 `;
 
-const CreateRecipe = () => {
+const UPDATE_RECIPE = gql`
+  mutation UpdateRecipe($id: String!, $object: recipes_set_input!) {
+    update_recipes_by_pk(pk_columns: { id: $id }, _set: $object) {
+      id
+      title
+      # include any other fields you want to return after the update
+    }
+  }
+`;
+
+const EditRecipe = () => {
+  const { id } = useParams();
+  const { loading, error, data } = useQuery(GET_RECIPE, {
+    variables: { id },
+  });
+  const [updateRecipe] = useMutation(UPDATE_RECIPE);
+
+  const defaultValues = {
+    title: "",
+    description: "",
+    ingredients: "",
+    instructions: "",
+    image: "",
+  };
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+    setValue,
+  } = useForm({
+    defaultValues,
+  });
 
-  const [insertRecipe] = useMutation(INSERT_RECIPE);
+  useEffect(() => {
+    if (data) {
+      setValue("title", data?.recipes[0].title);
+      setValue("summary", data?.recipes[0].summary);
+      setValue("ingredients", data?.recipes[0].extendedIngredients);
+      setValue("instructions", data?.recipes[0].instructions);
+      // setValue("image", data?.recipes[0].image);
+      setValue("readyInMinutes", data?.recipes[0].readyInMinutes);
+      setValue("servings", data?.recipes[0].servings);
+      setValue("dishTypes", data?.recipes[0].dishTypes);
+      setValue("cuisines", data?.recipes[0].cuisines);
+    }
+  }, [data, setValue]);
 
   const cuisineOptions = [
     "African",
@@ -43,10 +91,11 @@ const CreateRecipe = () => {
   ];
 
   const onSubmit = (data) => {
-    insertRecipe({
+    console.log(data);
+    updateRecipe({
       variables: {
+        id: id,
         object: {
-          id: nanoid(6),
           title: data.title,
           readyInMinutes: data.readyInMinutes,
           servings: data.servings,
@@ -63,7 +112,7 @@ const CreateRecipe = () => {
     <section className="p-10">
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-3xl font-bold">Create New Recipe</h1>
+          <h1 className="text-3xl font-bold">Edit Recipe</h1>
           <Button
             className="focus:outline-none text-white bg-primary hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-7 py-2.5 md:max-w-1/12"
             label="Save Recipe"
@@ -177,7 +226,6 @@ const CreateRecipe = () => {
             type="text"
             className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Ingredients (seperate each items with comma, ex: ingredients 1, ingredients 2, ingredients 3)"
-            rows="5"
             {...register("ingredients", {
               required: "Ingredients is required",
             })}
@@ -190,7 +238,6 @@ const CreateRecipe = () => {
             type="text"
             className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Instructions (seperate each items with comma, ex: instruction 1, instruction 2, instruction 3)"
-            rows="5"
             {...register("instructions", {
               required: "Instructions is required",
             })}
@@ -202,4 +249,4 @@ const CreateRecipe = () => {
   );
 };
 
-export default CreateRecipe;
+export default EditRecipe;

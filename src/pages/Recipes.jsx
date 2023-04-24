@@ -2,37 +2,39 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import Card from "../component/Card";
 import Button from "../component/Button";
+import { gql, useQuery } from "@apollo/client";
+
+const GET_RECIPES = gql`
+  query GetRecipes {
+    recipes {
+      aggregateLikes
+      cuisines
+      dishTypes
+      extendedIngredients
+      id
+      image
+      instructions
+      readyInMinutes
+      servings
+      summary
+      title
+    }
+  }
+`;
 
 const Recipes = () => {
   const { register, handleSubmit } = useForm();
+  const { data, loading, error } = useQuery(GET_RECIPES);
 
   const cuisineOptions = [
     "African",
     "American",
-    "British",
-    "Cajun",
+    "Asian",
     "Caribbean",
-    "Chinese",
-    "Eastern European",
     "European",
-    "French",
-    "German",
-    "Greek",
-    "Indian",
-    "Irish",
-    "Italian",
-    "Japanese",
-    "Jewish",
-    "Korean",
     "Latin American",
     "Mediterranean",
-    "Mexican",
     "Middle Eastern",
-    "Nordic",
-    "Southern",
-    "Spanish",
-    "Thai",
-    "Vietnamese",
   ];
 
   const dishTypes = [
@@ -40,16 +42,7 @@ const Recipes = () => {
     { value: "side dish", label: "Side Dish" },
     { value: "dessert", label: "Dessert" },
     { value: "appetizer", label: "Appetizer" },
-    { value: "salad", label: "Salad" },
-    { value: "bread", label: "Bread" },
     { value: "breakfast", label: "Breakfast" },
-    { value: "soup", label: "Soup" },
-    { value: "beverage", label: "Beverage" },
-    { value: "sauce", label: "Sauce" },
-    { value: "marinade", label: "Marinade" },
-    { value: "fingerfood", label: "Fingerfood" },
-    { value: "snack", label: "Snack" },
-    { value: "drink", label: "Drink" },
   ];
 
   const onSubmit = (data) => {
@@ -118,14 +111,11 @@ const Recipes = () => {
           />
         </div>
       </form>
-      <div className="card-container flex flex-row flex-wrap mt-10 gap-y-10 md:gap-x-4 lg:gap-x-5">
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
+      <h1 className="text-3xl font-bold mt-5">Latest Recipes</h1>
+      <div className="card-container flex flex-row flex-wrap mt-5  gap-y-10 md:gap-x-4 lg:gap-x-5">
+        {data?.recipes.map((recipe) => (
+          <Card key={recipe.id} item={recipe} />
+        ))}
       </div>
     </section>
   );
