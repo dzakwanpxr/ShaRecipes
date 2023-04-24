@@ -4,8 +4,15 @@ import globe from "../assets/globe.png";
 import pot from "../assets/pot.png";
 import document from "../assets/document.png";
 import Button from "../component/Button";
+import { useNavigate } from "react-router";
 
 const LandingPage = () => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate("/recipes");
+  };
+
   return (
     <main>
       <section className="p-10 h-screen flex flex-col md:flex-row md:items-center md:justify-around">
@@ -20,6 +27,7 @@ const LandingPage = () => {
           <Button
             className="w-full focus:outline-none text-white bg-primary hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-10 py-3 md:w-56"
             label="Let's Cook!"
+            onClick={handleClick}
           />
         </div>
         <img src={heroImg} alt="hero-img" />

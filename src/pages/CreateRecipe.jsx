@@ -2,8 +2,10 @@ import React from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
-import { gql, useQuery, useMutation } from "@apollo/client";
+import { gql, useMutation } from "@apollo/client";
 import { nanoid } from "nanoid";
+import { useNavigate } from "react-router";
+import { dishTypesOptions, cuisineOptions } from "../formOptions";
 
 const INSERT_RECIPE = gql`
   mutation InsertRecipe($object: recipes_insert_input!) {
@@ -15,6 +17,8 @@ const INSERT_RECIPE = gql`
 `;
 
 const CreateRecipe = () => {
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -22,25 +26,6 @@ const CreateRecipe = () => {
   } = useForm();
 
   const [insertRecipe] = useMutation(INSERT_RECIPE);
-
-  const cuisineOptions = [
-    "African",
-    "American",
-    "Asian",
-    "Caribbean",
-    "European",
-    "Latin American",
-    "Mediterranean",
-    "Middle Eastern",
-  ];
-
-  const dishTypes = [
-    { value: "main course", label: "Main Course" },
-    { value: "side dish", label: "Side Dish" },
-    { value: "dessert", label: "Dessert" },
-    { value: "appetizer", label: "Appetizer" },
-    { value: "breakfast", label: "Breakfast" },
-  ];
 
   const onSubmit = (data) => {
     insertRecipe({
@@ -58,6 +43,7 @@ const CreateRecipe = () => {
         },
       },
     });
+    navigate("/recipes");
   };
   return (
     <section className="p-10">
@@ -164,7 +150,7 @@ const CreateRecipe = () => {
             <option disabled value="">
               Dish Type (optional)
             </option>
-            {dishTypes.map((type) => (
+            {dishTypesOptions.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
               </option>
