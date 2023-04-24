@@ -3,7 +3,8 @@ import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
 import { gql, useQuery, useMutation } from "@apollo/client";
-import { useLocation, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { dishTypesOptions, cuisineOptions } from "../formOptions";
 
 const GET_RECIPE = gql`
   query GetRecipe($id: String!) {
@@ -34,6 +35,7 @@ const UPDATE_RECIPE = gql`
 `;
 
 const EditRecipe = () => {
+  const navigate = useNavigate();
   const { id } = useParams();
   const { loading, error, data } = useQuery(GET_RECIPE, {
     variables: { id },
@@ -71,27 +73,7 @@ const EditRecipe = () => {
     }
   }, [data, setValue]);
 
-  const cuisineOptions = [
-    "African",
-    "American",
-    "Asian",
-    "Caribbean",
-    "European",
-    "Latin American",
-    "Mediterranean",
-    "Middle Eastern",
-  ];
-
-  const dishTypes = [
-    { value: "main course", label: "Main Course" },
-    { value: "side dish", label: "Side Dish" },
-    { value: "dessert", label: "Dessert" },
-    { value: "appetizer", label: "Appetizer" },
-    { value: "breakfast", label: "Breakfast" },
-  ];
-
   const onSubmit = (data) => {
-    console.log(data);
     updateRecipe({
       variables: {
         id: id,
@@ -107,6 +89,7 @@ const EditRecipe = () => {
         },
       },
     });
+    navigate("/recipes");
   };
   return (
     <section className="p-10">
@@ -213,7 +196,7 @@ const EditRecipe = () => {
             <option disabled value="">
               Dish Type (optional)
             </option>
-            {dishTypes.map((type) => (
+            {dishTypesOptions.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
               </option>

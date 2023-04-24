@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import Card from "../component/Card";
 import Button from "../component/Button";
 import { gql, useQuery } from "@apollo/client";
+import { dishTypesOptions, cuisineOptions } from "../formOptions";
 
 const GET_RECIPES = gql`
   query GetRecipes {
@@ -25,25 +26,6 @@ const GET_RECIPES = gql`
 const Recipes = () => {
   const { register, handleSubmit } = useForm();
   const { data, loading, error } = useQuery(GET_RECIPES);
-
-  const cuisineOptions = [
-    "African",
-    "American",
-    "Asian",
-    "Caribbean",
-    "European",
-    "Latin American",
-    "Mediterranean",
-    "Middle Eastern",
-  ];
-
-  const dishTypes = [
-    { value: "main course", label: "Main Course" },
-    { value: "side dish", label: "Side Dish" },
-    { value: "dessert", label: "Dessert" },
-    { value: "appetizer", label: "Appetizer" },
-    { value: "breakfast", label: "Breakfast" },
-  ];
 
   const onSubmit = (data) => {
     console.log(data);
@@ -99,7 +81,7 @@ const Recipes = () => {
             <option disabled value="">
               Dish Type
             </option>
-            {dishTypes.map((type) => (
+            {dishTypesOptions.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
               </option>

@@ -1,9 +1,14 @@
 import React from "react";
 import defaultFood from "../assets/food-bg.png";
-import { MdOutlineTimer, MdRoomService, MdThumbUp } from "react-icons/md";
+import {
+  MdOutlineTimer,
+  MdRoomService,
+  MdThumbUp,
+  MdArrowBack,
+} from "react-icons/md";
 import { useQuery, gql } from "@apollo/client";
 import parse from "html-react-parser";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const GET_RECIPE = gql`
   query GetRecipe($id: String!) {
@@ -41,7 +46,13 @@ const CardDetail = () => {
       <li key={index}>{instruction}</li>
     ));
     return (
-      <section className="p-10">
+      <section className="px-10 py-5">
+        <Link to="/recipes">
+          <div className="flex flex-row gap-2 mb-5 items-center hover:underline underline-offset-4">
+            <MdArrowBack size={16} />
+            <p className="text-sm">Back to all recipes</p>
+          </div>
+        </Link>
         <img
           className="w-full object-cover xl:h-96 mb-5"
           src={recipe.image ? recipe.image : defaultFood}
@@ -63,7 +74,6 @@ const CardDetail = () => {
         </div>
         <hr className="mb-2" />
         <p className="mb-5 text-justify">{parse(recipe.summary)}</p>
-
         <div className="recipe-ingredients mb-5">
           <h1 className="text-3xl font-bold text-primary mb-5">Ingredients</h1>
           <ul className="list-disc">{ingredientListItems}</ul>
