@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
@@ -6,6 +6,8 @@ import { gql, useMutation } from "@apollo/client";
 import { nanoid } from "nanoid";
 import { useNavigate } from "react-router";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
+import { storage } from "../config/firebaseConfig";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const INSERT_RECIPE = gql`
   mutation InsertRecipe($object: recipes_insert_input!) {
@@ -17,6 +19,8 @@ const INSERT_RECIPE = gql`
 `;
 
 const CreateRecipe = () => {
+  const [percent, setPercent] = useState(0);
+  const [fileName, setFileName] = useState("");
   const navigate = useNavigate();
 
   const {
@@ -28,22 +32,48 @@ const CreateRecipe = () => {
   const [insertRecipe] = useMutation(INSERT_RECIPE);
 
   const onSubmit = (data) => {
-    insertRecipe({
-      variables: {
-        object: {
-          id: nanoid(6),
-          title: data.title,
-          readyInMinutes: data.readyInMinutes,
-          servings: data.servings,
-          summary: data.summary,
-          instructions: data.instructions,
-          extendedIngredients: data.ingredients,
-          dishTypes: data.dishTypes === "" ? null : data.dishTypes,
-          cuisines: data.cuisines === "" ? null : data.cuisines,
-        },
+    const storageRef = ref(storage, `/files/${data.image[0].name}`);
+    const uploadTask = uploadBytesResumable(storageRef, data.image[0]);
+    setFileName(data.image[0].name);
+
+    uploadTask.on(
+      "state_changed",
+      //upload progress
+      (snapshot) => {
+        const percent = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setPercent(percent);
       },
-    });
-    navigate("/recipes");
+
+      //upload gagal
+      (err) => {
+        console.log(err);
+      },
+      //upload selesai
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+          console.log(url);
+          insertRecipe({
+            variables: {
+              object: {
+                id: nanoid(6),
+                title: data.title,
+                readyInMinutes: data.readyInMinutes,
+                servings: data.servings,
+                summary: data.summary,
+                instructions: data.instructions,
+                extendedIngredients: data.ingredients,
+                dishTypes: data.dishTypes === "" ? null : data.dishTypes,
+                cuisines: data.cuisines === "" ? null : data.cuisines,
+                image: url,
+              },
+            },
+          });
+          navigate("/recipes");
+        });
+      }
+    );
   };
   return (
     <section className="p-10">
@@ -59,16 +89,36 @@ const CreateRecipe = () => {
         <div className="flex items-center justify-center w-full mb-3">
           <label
             htmlFor="dropzone-file"
-            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50 "
+            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50"
           >
-            <div className="flex flex-col items-center justify-center py-6">
-              <MdImage size={48} />
-              <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Click to upload</span> or drag
-                and drop
-              </p>
-              <p className="text-xs text-gray-500">PNG or JPG only</p>
-            </div>
+            {percent === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <MdImage size={48} />
+                <p className="mb-2 text-sm text-gray-500">
+                  <span className="font-semibold">Click to upload</span> or drag
+                  and drop
+                </p>
+                <p className="text-xs text-gray-500">PNG or JPG only</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6">
+                {percent < 100 ? (
+                  <>
+                    <p className="text-2xl text-primary font-bold mb-2">
+                      {percent}%
+                    </p>
+                    <div className="w-full h-4 mb-4 bg-gray-200">
+                      <div
+                        className="h-4 bg-primary"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-lg font-bold text-primary">{fileName}</p>
+                )}
+              </div>
+            )}
             <input
               id="dropzone-file"
               type="file"
@@ -107,6 +157,7 @@ const CreateRecipe = () => {
         <div className="flex mb-3">
           <input
             type="number"
+            min={0}
             className="me-5 border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Preparation Time"
             {...register("readyInMinutes", {
@@ -118,6 +169,7 @@ const CreateRecipe = () => {
           </p>
           <input
             type="number"
+            min={0}
             className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Servings"
             {...register("servings", {

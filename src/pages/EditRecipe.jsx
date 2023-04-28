@@ -1,10 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { useNavigate, useParams } from "react-router-dom";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
+import { storage } from "../config/firebaseConfig";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const GET_RECIPE = gql`
   query GetRecipe($id: String!) {
@@ -35,6 +37,8 @@ const UPDATE_RECIPE = gql`
 `;
 
 const EditRecipe = () => {
+  const [percent, setPercent] = useState(0);
+  const [fileName, setFileName] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
   const { loading, error, data } = useQuery(GET_RECIPE, {
@@ -61,11 +65,12 @@ const EditRecipe = () => {
 
   useEffect(() => {
     if (data) {
+      setFileName(data?.recipes[0].image);
       setValue("title", data?.recipes[0].title);
       setValue("summary", data?.recipes[0].summary);
       setValue("ingredients", data?.recipes[0].extendedIngredients);
       setValue("instructions", data?.recipes[0].instructions);
-      // setValue("image", data?.recipes[0].image);
+      setValue("image", data?.recipes[0].image);
       setValue("readyInMinutes", data?.recipes[0].readyInMinutes);
       setValue("servings", data?.recipes[0].servings);
       setValue("dishTypes", data?.recipes[0].dishTypes);
@@ -74,22 +79,48 @@ const EditRecipe = () => {
   }, [data, setValue]);
 
   const onSubmit = (data) => {
-    updateRecipe({
-      variables: {
-        id: id,
-        object: {
-          title: data.title,
-          readyInMinutes: data.readyInMinutes,
-          servings: data.servings,
-          summary: data.summary,
-          instructions: data.instructions,
-          extendedIngredients: data.ingredients,
-          dishTypes: data.dishTypes === "" ? null : data.dishTypes,
-          cuisines: data.cuisines === "" ? null : data.cuisines,
-        },
+    const storageRef = ref(storage, `/files/${data.image[0].name}`);
+    const uploadTask = uploadBytesResumable(storageRef, data.image[0]);
+    setFileName(data.image[0].name);
+
+    uploadTask.on(
+      "state_changed",
+      //upload progress
+      (snapshot) => {
+        const percent = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setPercent(percent);
       },
-    });
-    navigate("/recipes");
+
+      //upload gagal
+      (err) => {
+        console.log(err);
+      },
+      //upload selesai
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((url) => {
+          console.log(url);
+          updateRecipe({
+            variables: {
+              id: id,
+              object: {
+                title: data.title,
+                readyInMinutes: data.readyInMinutes,
+                servings: data.servings,
+                summary: data.summary,
+                instructions: data.instructions,
+                extendedIngredients: data.ingredients,
+                dishTypes: data.dishTypes === "" ? null : data.dishTypes,
+                cuisines: data.cuisines === "" ? null : data.cuisines,
+                image: url,
+              },
+            },
+          });
+          navigate("/recipes");
+        });
+      }
+    );
   };
   return (
     <section className="p-10">
@@ -105,16 +136,36 @@ const EditRecipe = () => {
         <div className="flex items-center justify-center w-full mb-3">
           <label
             htmlFor="dropzone-file"
-            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50 "
+            className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50"
           >
-            <div className="flex flex-col items-center justify-center py-6">
-              <MdImage size={48} />
-              <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Click to upload</span> or drag
-                and drop
-              </p>
-              <p className="text-xs text-gray-500">PNG or JPG only</p>
-            </div>
+            {percent === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <MdImage size={48} />
+                <p className="mb-2 text-sm text-gray-500">
+                  <span className="font-semibold">Click to upload</span> or drag
+                  and drop
+                </p>
+                <p className="text-xs text-gray-500">PNG or JPG only</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6">
+                {percent < 100 ? (
+                  <>
+                    <p className="text-2xl text-primary font-bold mb-2">
+                      {percent}%
+                    </p>
+                    <div className="w-full h-4 mb-4 bg-gray-200">
+                      <div
+                        className="h-4 bg-primary"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-lg font-bold text-primary">{fileName}</p>
+                )}
+              </div>
+            )}
             <input
               id="dropzone-file"
               type="file"
