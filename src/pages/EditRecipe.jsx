@@ -84,8 +84,8 @@ const EditRecipe = () => {
           summary: data.summary,
           instructions: data.instructions,
           extendedIngredients: data.ingredients,
-          dishTypes: data.dishTypes,
-          cuisines: data.cuisines,
+          dishTypes: data.dishTypes === "" ? null : data.dishTypes,
+          cuisines: data.cuisines === "" ? null : data.cuisines,
         },
       },
     });
