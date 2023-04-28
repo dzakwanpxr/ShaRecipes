@@ -59,7 +59,7 @@ const Card = ({ item }) => {
           </Link>
         </div>
         <div className="flex card-icon">
-          <MdEdit size={24} onClick={handleUpdate} />
+          <MdEdit size={24} onClick={handleUpdate} className="cursor-pointer" />
           <MdDelete
             color="red"
             size={24}
