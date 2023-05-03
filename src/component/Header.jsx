@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import Button from "./Button";
+import { AuthContext } from "../context/AuthContext";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { logout } = useContext(AuthContext);
+  const isLoggedIn = localStorage.getItem("isLoggedIn");
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -41,7 +44,7 @@ const Header = () => {
           className={`w-full md:block md:w-auto ${isOpen ? "" : "hidden"}`}
           id="navbar-default"
         >
-          <ul className="flex flex-col p-4 md:p-0 mt-4  md:flex-row md:space-x-8 md:mt-0  ">
+          <ul className="flex flex-col p-4 md:p-0 mt-4  md:flex-row md:space-x-8 md:mt-0 md:items-center">
             <NavLink
               to="/recipes"
               className={({ isActive }) =>
@@ -52,26 +55,37 @@ const Header = () => {
             >
               Recipes
             </NavLink>
-            <NavLink
-              to="/login"
-              className={({ isActive }) =>
-                isActive
-                  ? "py-2 pl-3 pr-4 text-white underline underline-offset-8 md:p-0"
-                  : "py-2 pl-3 pr-4 text-white hover:underline underline-offset-8 md:p-0"
-              }
-            >
-              Sign In
-            </NavLink>
-            <NavLink
-              to="/profile"
-              className={({ isActive }) =>
-                isActive
-                  ? "py-2 pl-3 pr-4 text-white underline underline-offset-8 md:p-0"
-                  : "py-2 pl-3 pr-4 text-white hover:underline underline-offset-8 md:p-0"
-              }
-            >
-              Profile
-            </NavLink>
+            {isLoggedIn ? (
+              <>
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "py-2 pl-3 pr-4 text-white underline underline-offset-8 md:p-0"
+                      : "py-2 pl-3 pr-4 text-white hover:underline underline-offset-8 md:p-0"
+                  }
+                >
+                  Profile
+                </NavLink>
+                <button
+                  onClick={logout}
+                  className="text-primary bg-white hover:bg-red-100 focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-7 py-2.5"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <NavLink
+                to="/login"
+                className={({ isActive }) =>
+                  isActive
+                    ? "py-2 pl-3 pr-4 text-white underline underline-offset-8 md:p-0"
+                    : "py-2 pl-3 pr-4 text-white hover:underline underline-offset-8 md:p-0"
+                }
+              >
+                Sign In
+              </NavLink>
+            )}
           </ul>
         </div>
       </div>

@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import Card from "../component/Card";
 import Button from "../component/Button";
-import { gql, useQuery, useLazyQuery } from "@apollo/client";
+import Spinner from "../component/Spinner";
+import { gql, useSubscription, useLazyQuery } from "@apollo/client";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
 
 const GET_RECIPES = gql`
-  query GetRecipes {
+  subscription GetRecipes {
     recipes {
       cuisines
       dishTypes
@@ -17,15 +18,15 @@ const GET_RECIPES = gql`
   }
 `;
 
-const SEARCH_RECIPES = gql`
+const SEARCH_RECIPES_AND = gql`
   query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
     recipes(
       where: {
         title: { _ilike: $title }
-        _or: {
-          cuisines: { _eq: $cuisines }
-          _or: { dishTypes: { _eq: $dishTypes } }
-        }
+        _and: [
+          { cuisines: { _eq: $cuisines } }
+          { dishTypes: { _eq: $dishTypes } }
+        ]
       }
     ) {
       cuisines
@@ -37,23 +38,72 @@ const SEARCH_RECIPES = gql`
   }
 `;
 
+const SEARCH_RECIPES_OR = gql`
+  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
+    recipes(
+      where: {
+        title: { _ilike: $title }
+        _or: [
+          { cuisines: { _eq: $cuisines } }
+          { dishTypes: { _eq: $dishTypes } }
+        ]
+      }
+    ) {
+      cuisines
+      dishTypes
+      id
+      image
+      title
+    }
+  }
+`;
+
+const SEARCH_RECIPES_TITLE = gql`
+  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
+    recipes(where: { title: { _ilike: $title } }) {
+      cuisines
+      dishTypes
+      id
+      image
+      title
+    }
+  }
+`;
+
 const Recipes = () => {
   const { register, handleSubmit } = useForm();
-  const [searchRecipes, { data: searchData }] = useLazyQuery(SEARCH_RECIPES);
-  const { data } = useQuery(GET_RECIPES);
+  const [searchRecipesAnd, { data: searchDataAnd, loading: searchLoadingAnd }] =
+    useLazyQuery(SEARCH_RECIPES_AND);
+  const [searchRecipesOr, { data: searchDataOr, loading: searchLoadingOr }] =
+    useLazyQuery(SEARCH_RECIPES_OR);
+  const { data, loading } = useSubscription(GET_RECIPES);
 
   const onSubmit = (data) => {
-    searchRecipes({
-      variables: {
-        title: `%${data.search}%`,
-        dishTypes: data.dishTypes === "" ? null : data.dishTypes,
-        cuisines: data.cuisines === "" ? null : data.cuisines,
-      },
-    });
+    if (data.dishTypes && data.cuisines) {
+      searchRecipesAnd({
+        variables: {
+          title: `%${data.search}%`,
+          dishTypes: data.dishTypes,
+          cuisines: data.cuisines,
+        },
+      });
+      console.log("jalan and");
+    } else {
+      searchRecipesOr({
+        variables: {
+          title: `%${data.search}%`,
+          dishTypes: data.dishTypes,
+          cuisines: data.cuisines,
+        },
+      });
 
-    console.log(data);
+      console.log("jalan or");
+    }
   };
-  console.log(searchData);
+
+  if (loading || searchLoadingAnd || searchLoadingOr) {
+    return <Spinner />;
+  }
 
   return (
     <section className="p-10">
@@ -118,21 +168,26 @@ const Recipes = () => {
         </div>
       </form>
       <h1 className="text-3xl font-bold mt-5">Latest Recipes</h1>
-      <div className="card-container flex flex-row flex-wrap mt-5  gap-y-10 md:gap-x-4 lg:gap-x-5">
-        {searchData ? (
-          <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 md:gap-x-4 lg:gap-x-5">
-            {searchData.recipes.map((recipe) => (
+
+      {searchDataAnd?.recipes || searchDataOr?.recipes ? (
+        <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 lg:gap-x-20 ">
+          {(searchDataAnd?.recipes || searchDataOr?.recipes)
+            ?.slice()
+            .reverse()
+            .map((recipe) => (
               <Card key={recipe.id} item={recipe} />
             ))}
-          </div>
-        ) : (
-          <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 md:gap-x-4 lg:gap-x-5">
-            {data?.recipes.map((recipe) => (
+        </div>
+      ) : (
+        <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 md:justify-between">
+          {data?.recipes
+            .slice()
+            .reverse()
+            .map((recipe) => (
               <Card key={recipe.id} item={recipe} />
             ))}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };

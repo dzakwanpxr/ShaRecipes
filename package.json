@@ -9,7 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@apollo/client": "^3.7.12",
+    "@apollo/client": "^3.7.13",
+    "bcryptjs": "^2.4.3",
     "firebase": "^9.21.0",
     "flowbite": "^1.6.5",
     "flowbite-react": "^0.4.3",
@@ -23,7 +24,8 @@
     "react-hook-form": "^7.43.9",
     "react-icons": "^4.8.0",
     "react-router-dom": "^6.10.0",
-    "sort-by": "^1.2.0"
+    "sort-by": "^1.2.0",
+    "subscriptions-transport-ws": "^0.11.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",
