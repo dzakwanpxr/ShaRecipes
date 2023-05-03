@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { ModalContext } from "../context/ModalContext";
 
 const MyCard = ({ item }) => {
-  console.log(item);
   const { showModal, openModal, modalId } = useContext(ModalContext);
   const navigate = useNavigate();
 

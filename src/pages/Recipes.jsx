@@ -87,7 +87,6 @@ const Recipes = () => {
           cuisines: data.cuisines,
         },
       });
-      console.log("jalan and");
     } else {
       searchRecipesOr({
         variables: {
@@ -96,8 +95,6 @@ const Recipes = () => {
           cuisines: data.cuisines,
         },
       });
-
-      console.log("jalan or");
     }
   };
 

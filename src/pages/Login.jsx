@@ -21,9 +21,6 @@ const GET_USER = gql`
 const Login = () => {
   const { register, handleSubmit, getValues } = useForm();
   const [getUser, { data: userData, loading, error }] = useLazyQuery(GET_USER);
-  console.log(userData);
-  console.log(loading);
-  console.log(error);
   const { login } = useContext(AuthContext);
 
   const onSubmit = async (data) => {

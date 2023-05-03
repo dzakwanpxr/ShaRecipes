@@ -26,9 +26,6 @@ const Register = () => {
   const navigate = useNavigate();
 
   const [userRegister, { loading, error, data }] = useMutation(USER_REGISTER);
-  console.log(data);
-  console.log(loading);
-  console.log(error);
 
   const onSubmit = async (data) => {
     const hashedPassword = await bcrypt.hash(data.password, 10);

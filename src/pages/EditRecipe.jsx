@@ -54,7 +54,6 @@ const EditRecipe = () => {
   const [updateRecipe] = useMutation(UPDATE_RECIPE);
   const storage = getStorage();
   const fileRef = ref(storage, fileURL);
-  console.log(fileRef.name);
 
   const defaultValues = {
     title: "",
@@ -89,14 +88,9 @@ const EditRecipe = () => {
   }, [data, setValue]);
 
   const onSubmit = (data) => {
-    console.log(data);
-    console.log(fileURL);
-    console.log(data.image[0].name);
-    console.log(fileURL !== data.image[0].name);
     const storageRef = ref(storage, `/files/${data.image[0].name}`);
     const uploadTask = uploadBytesResumable(storageRef, data.image[0]);
     setfileURL(data.image[0].name);
-    console.log(fileURL);
 
     uploadTask.on(
       "state_changed",

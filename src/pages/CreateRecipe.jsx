@@ -55,7 +55,6 @@ const CreateRecipe = () => {
       //upload selesai
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((url) => {
-          console.log(url);
           insertRecipe({
             variables: {
               object: {
