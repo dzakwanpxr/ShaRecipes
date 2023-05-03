@@ -1,60 +1,106 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import Card from "../component/Card";
 import Button from "../component/Button";
+import Spinner from "../component/Spinner";
+import { gql, useSubscription, useLazyQuery } from "@apollo/client";
+import { dishTypesOptions, cuisineOptions } from "../formOptions";
+
+const GET_RECIPES = gql`
+  subscription GetRecipes {
+    recipes {
+      cuisines
+      dishTypes
+      id
+      image
+      title
+    }
+  }
+`;
+
+const SEARCH_RECIPES_AND = gql`
+  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
+    recipes(
+      where: {
+        title: { _ilike: $title }
+        _and: [
+          { cuisines: { _eq: $cuisines } }
+          { dishTypes: { _eq: $dishTypes } }
+        ]
+      }
+    ) {
+      cuisines
+      dishTypes
+      id
+      image
+      title
+    }
+  }
+`;
+
+const SEARCH_RECIPES_OR = gql`
+  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
+    recipes(
+      where: {
+        title: { _ilike: $title }
+        _or: [
+          { cuisines: { _eq: $cuisines } }
+          { dishTypes: { _eq: $dishTypes } }
+        ]
+      }
+    ) {
+      cuisines
+      dishTypes
+      id
+      image
+      title
+    }
+  }
+`;
+
+const SEARCH_RECIPES_TITLE = gql`
+  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
+    recipes(where: { title: { _ilike: $title } }) {
+      cuisines
+      dishTypes
+      id
+      image
+      title
+    }
+  }
+`;
 
 const Recipes = () => {
   const { register, handleSubmit } = useForm();
-
-  const cuisineOptions = [
-    "African",
-    "American",
-    "British",
-    "Cajun",
-    "Caribbean",
-    "Chinese",
-    "Eastern European",
-    "European",
-    "French",
-    "German",
-    "Greek",
-    "Indian",
-    "Irish",
-    "Italian",
-    "Japanese",
-    "Jewish",
-    "Korean",
-    "Latin American",
-    "Mediterranean",
-    "Mexican",
-    "Middle Eastern",
-    "Nordic",
-    "Southern",
-    "Spanish",
-    "Thai",
-    "Vietnamese",
-  ];
-
-  const dishTypes = [
-    { value: "main course", label: "Main Course" },
-    { value: "side dish", label: "Side Dish" },
-    { value: "dessert", label: "Dessert" },
-    { value: "appetizer", label: "Appetizer" },
-    { value: "salad", label: "Salad" },
-    { value: "bread", label: "Bread" },
-    { value: "breakfast", label: "Breakfast" },
-    { value: "soup", label: "Soup" },
-    { value: "beverage", label: "Beverage" },
-    { value: "sauce", label: "Sauce" },
-    { value: "marinade", label: "Marinade" },
-    { value: "fingerfood", label: "Fingerfood" },
-    { value: "snack", label: "Snack" },
-    { value: "drink", label: "Drink" },
-  ];
+  const [searchRecipesAnd, { data: searchDataAnd, loading: searchLoadingAnd }] =
+    useLazyQuery(SEARCH_RECIPES_AND);
+  const [searchRecipesOr, { data: searchDataOr, loading: searchLoadingOr }] =
+    useLazyQuery(SEARCH_RECIPES_OR);
+  const { data, loading } = useSubscription(GET_RECIPES);
 
   const onSubmit = (data) => {
-    console.log(data);
+    if (data.dishTypes && data.cuisines) {
+      searchRecipesAnd({
+        variables: {
+          title: `%${data.search}%`,
+          dishTypes: data.dishTypes,
+          cuisines: data.cuisines,
+        },
+      });
+    } else {
+      searchRecipesOr({
+        variables: {
+          title: `%${data.search}%`,
+          dishTypes: data.dishTypes,
+          cuisines: data.cuisines,
+        },
+      });
+    }
   };
+
+  if (loading || searchLoadingAnd || searchLoadingOr) {
+    return <Spinner />;
+  }
 
   return (
     <section className="p-10">
@@ -106,7 +152,7 @@ const Recipes = () => {
             <option disabled value="">
               Dish Type
             </option>
-            {dishTypes.map((type) => (
+            {dishTypesOptions.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
               </option>
@@ -118,15 +164,27 @@ const Recipes = () => {
           />
         </div>
       </form>
-      <div className="card-container flex flex-row flex-wrap mt-10 gap-y-10 md:gap-x-4 lg:gap-x-5">
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-      </div>
+      <h1 className="text-3xl font-bold mt-5">Latest Recipes</h1>
+
+      {searchDataAnd?.recipes || searchDataOr?.recipes ? (
+        <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 lg:gap-x-20 ">
+          {(searchDataAnd?.recipes || searchDataOr?.recipes)
+            ?.slice()
+            .reverse()
+            .map((recipe) => (
+              <Card key={recipe.id} item={recipe} />
+            ))}
+        </div>
+      ) : (
+        <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 md:justify-between">
+          {data?.recipes
+            .slice()
+            .reverse()
+            .map((recipe) => (
+              <Card key={recipe.id} item={recipe} />
+            ))}
+        </div>
+      )}
     </section>
   );
 };

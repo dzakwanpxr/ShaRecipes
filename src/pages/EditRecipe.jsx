@@ -1,42 +1,96 @@
-import React, { useState, useContext } from "react";
+import React, { useEffect, useState } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
-import { gql, useMutation } from "@apollo/client";
-import { nanoid } from "nanoid";
-import { useNavigate } from "react-router";
+import Spinner from "../component/Spinner";
+import { gql, useQuery, useMutation } from "@apollo/client";
+import { useNavigate, useParams } from "react-router-dom";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
-import { storage } from "../config/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { AuthContext } from "../context/AuthContext";
 
-const INSERT_RECIPE = gql`
-  mutation InsertRecipe($object: recipes_insert_input!) {
-    insert_recipes_one(object: $object) {
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  getStorage,
+  getMetadata,
+} from "firebase/storage";
+
+const GET_RECIPE = gql`
+  query GetRecipe($id: String!) {
+    recipes(where: { id: { _eq: $id } }) {
+      aggregateLikes
+      cuisines
+      dishTypes
+      extendedIngredients
       id
+      image
+      instructions
+      readyInMinutes
+      servings
+      summary
       title
     }
   }
 `;
 
-const CreateRecipe = () => {
+const UPDATE_RECIPE = gql`
+  mutation UpdateRecipe($id: String!, $object: recipes_set_input!) {
+    update_recipes_by_pk(pk_columns: { id: $id }, _set: $object) {
+      id
+      title
+      # include any other fields you want to return after the update
+    }
+  }
+`;
+
+const EditRecipe = () => {
   const [percent, setPercent] = useState(0);
-  const [fileName, setFileName] = useState("");
-  const { userID } = useContext(AuthContext);
+  const [fileURL, setfileURL] = useState("");
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { loading, error, data } = useQuery(GET_RECIPE, {
+    variables: { id },
+  });
+  const [updateRecipe] = useMutation(UPDATE_RECIPE);
+  const storage = getStorage();
+  const fileRef = ref(storage, fileURL);
+
+  const defaultValues = {
+    title: "",
+    description: "",
+    ingredients: "",
+    instructions: "",
+    image: "",
+  };
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+    setValue,
+  } = useForm({
+    defaultValues,
+  });
 
-  const [insertRecipe] = useMutation(INSERT_RECIPE);
+  useEffect(() => {
+    if (data) {
+      setfileURL(data?.recipes[0].image);
+      setValue("title", data?.recipes[0].title);
+      setValue("summary", data?.recipes[0].summary);
+      setValue("ingredients", data?.recipes[0].extendedIngredients);
+      setValue("instructions", data?.recipes[0].instructions);
+      setValue("image", data?.recipes[0].image);
+      setValue("readyInMinutes", data?.recipes[0].readyInMinutes);
+      setValue("servings", data?.recipes[0].servings);
+      setValue("dishTypes", data?.recipes[0].dishTypes);
+      setValue("cuisines", data?.recipes[0].cuisines);
+    }
+  }, [data, setValue]);
 
   const onSubmit = (data) => {
     const storageRef = ref(storage, `/files/${data.image[0].name}`);
     const uploadTask = uploadBytesResumable(storageRef, data.image[0]);
-    setFileName(data.image[0].name);
+    setfileURL(data.image[0].name);
 
     uploadTask.on(
       "state_changed",
@@ -55,10 +109,11 @@ const CreateRecipe = () => {
       //upload selesai
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((url) => {
-          insertRecipe({
+          console.log(url);
+          updateRecipe({
             variables: {
+              id: id,
               object: {
-                id: nanoid(6),
                 title: data.title,
                 readyInMinutes: data.readyInMinutes,
                 servings: data.servings,
@@ -67,8 +122,7 @@ const CreateRecipe = () => {
                 extendedIngredients: data.ingredients,
                 dishTypes: data.dishTypes === "" ? null : data.dishTypes,
                 cuisines: data.cuisines === "" ? null : data.cuisines,
-                image: url,
-                user_id: userID,
+                image: data.image[0].name === undefined ? fileURL : url,
               },
             },
           });
@@ -77,11 +131,16 @@ const CreateRecipe = () => {
       }
     );
   };
+
+  if (loading) {
+    return <Spinner />;
+  }
+
   return (
     <section className="p-10">
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-3xl font-bold">Create New Recipe</h1>
+          <h1 className="text-3xl font-bold">Edit Recipe</h1>
           <Button
             className="focus:outline-none text-white bg-primary hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-7 py-2.5 md:max-w-1/12"
             label="Save Recipe"
@@ -95,13 +154,11 @@ const CreateRecipe = () => {
           >
             {percent === 0 ? (
               <div className="flex flex-col items-center justify-center py-6">
-                <MdImage size={48} />
-                <p className="mb-2 text-sm text-gray-500">
-                  <span className="font-semibold">Click to upload</span> or drag
-                  and drop
-                </p>
-                <p className="text-xs text-gray-500">PNG or JPG only</p>
-                <p className="text-primary text-sm">{fileName}</p>
+                {fileRef.name && (
+                  <p className="text-lg font-bold text-primary">
+                    {fileRef.name}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
@@ -116,10 +173,11 @@ const CreateRecipe = () => {
                         style={{ width: `${percent}%` }}
                       />
                     </div>
-                    <p className="text-primary text-sm">{fileName}</p>
                   </>
                 ) : (
-                  <p className="text-lg font-bold text-primary">{fileName}</p>
+                  <p className="text-lg font-bold text-primary">
+                    {fileRef.name}
+                  </p>
                 )}
               </div>
             )}
@@ -127,14 +185,11 @@ const CreateRecipe = () => {
               id="dropzone-file"
               type="file"
               className="hidden"
-              {...register("image", {
-                required: "Image is required",
-              })}
+              {...register("image")}
             />
-
-            <p className="text-primary text-sm">{errors.image?.message}</p>
           </label>
         </div>
+
         <div className="flex flex-col w-full mb-3">
           <input
             type="text"
@@ -164,7 +219,6 @@ const CreateRecipe = () => {
         <div className="flex mb-3">
           <input
             type="number"
-            min={0}
             className="me-5 border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Preparation Time"
             {...register("readyInMinutes", {
@@ -176,7 +230,6 @@ const CreateRecipe = () => {
           </p>
           <input
             type="number"
-            min={0}
             className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Servings"
             {...register("servings", {
@@ -222,7 +275,6 @@ const CreateRecipe = () => {
             type="text"
             className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Ingredients (seperate each items with comma, ex: ingredients 1, ingredients 2, ingredients 3)"
-            rows="5"
             {...register("ingredients", {
               required: "Ingredients is required",
             })}
@@ -235,7 +287,6 @@ const CreateRecipe = () => {
             type="text"
             className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
             placeholder="Add Instructions (seperate each items with comma, ex: instruction 1, instruction 2, instruction 3)"
-            rows="5"
             {...register("instructions", {
               required: "Instructions is required",
             })}
@@ -247,4 +298,4 @@ const CreateRecipe = () => {
   );
 };
 
-export default CreateRecipe;
+export default EditRecipe;
