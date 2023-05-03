@@ -1,5 +1,6 @@
 import React from "react";
 import defaultFood from "../assets/food-bg.png";
+import Spinner from "../component/Spinner";
 import {
   MdOutlineTimer,
   MdRoomService,
@@ -8,7 +9,7 @@ import {
 } from "react-icons/md";
 import { useQuery, gql } from "@apollo/client";
 import parse from "html-react-parser";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
 const GET_RECIPE = gql`
   query GetRecipe($id: String!) {
@@ -28,11 +29,17 @@ const GET_RECIPE = gql`
   }
 `;
 
-const CardDetail = () => {
+const RecipeDetail = () => {
   const id = useParams();
+  const navigate = useNavigate();
   const { loading, error, data } = useQuery(GET_RECIPE, {
     variables: id,
   });
+
+  if (loading) {
+    return <Spinner />;
+  }
+
   if (!error && !loading) {
     const recipe = data?.recipes[0];
 
@@ -47,12 +54,14 @@ const CardDetail = () => {
     ));
     return (
       <section className="px-10 py-5">
-        <Link to="/recipes">
-          <div className="flex flex-row gap-2 mb-5 items-center hover:underline underline-offset-4">
-            <MdArrowBack size={16} />
-            <p className="text-sm">Back to all recipes</p>
-          </div>
-        </Link>
+        <div
+          className="flex flex-row gap-2 mb-5 items-center hover:underline underline-offset-4 cursor-pointer"
+          onClick={() => navigate(-1)}
+        >
+          <MdArrowBack size={16} />
+          <p className="text-sm">Back to all recipes</p>
+        </div>
+
         <img
           className="w-full object-cover xl:h-96 mb-5"
           src={recipe.image ? recipe.image : defaultFood}
@@ -87,4 +96,4 @@ const CardDetail = () => {
   }
 };
 
-export default CardDetail;
+export default RecipeDetail;

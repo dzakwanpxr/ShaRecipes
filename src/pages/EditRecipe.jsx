@@ -2,11 +2,18 @@ import React, { useEffect, useState } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
+import Spinner from "../component/Spinner";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { useNavigate, useParams } from "react-router-dom";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
-import { storage } from "../config/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  getStorage,
+  getMetadata,
+} from "firebase/storage";
 
 const GET_RECIPE = gql`
   query GetRecipe($id: String!) {
@@ -38,13 +45,16 @@ const UPDATE_RECIPE = gql`
 
 const EditRecipe = () => {
   const [percent, setPercent] = useState(0);
-  const [fileName, setFileName] = useState("");
+  const [fileURL, setfileURL] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
   const { loading, error, data } = useQuery(GET_RECIPE, {
     variables: { id },
   });
   const [updateRecipe] = useMutation(UPDATE_RECIPE);
+  const storage = getStorage();
+  const fileRef = ref(storage, fileURL);
+  console.log(fileRef.name);
 
   const defaultValues = {
     title: "",
@@ -65,7 +75,7 @@ const EditRecipe = () => {
 
   useEffect(() => {
     if (data) {
-      setFileName(data?.recipes[0].image);
+      setfileURL(data?.recipes[0].image);
       setValue("title", data?.recipes[0].title);
       setValue("summary", data?.recipes[0].summary);
       setValue("ingredients", data?.recipes[0].extendedIngredients);
@@ -79,9 +89,14 @@ const EditRecipe = () => {
   }, [data, setValue]);
 
   const onSubmit = (data) => {
+    console.log(data);
+    console.log(fileURL);
+    console.log(data.image[0].name);
+    console.log(fileURL !== data.image[0].name);
     const storageRef = ref(storage, `/files/${data.image[0].name}`);
     const uploadTask = uploadBytesResumable(storageRef, data.image[0]);
-    setFileName(data.image[0].name);
+    setfileURL(data.image[0].name);
+    console.log(fileURL);
 
     uploadTask.on(
       "state_changed",
@@ -113,15 +128,20 @@ const EditRecipe = () => {
                 extendedIngredients: data.ingredients,
                 dishTypes: data.dishTypes === "" ? null : data.dishTypes,
                 cuisines: data.cuisines === "" ? null : data.cuisines,
-                image: url,
+                image: data.image[0].name === undefined ? fileURL : url,
               },
             },
           });
-          navigate("/recipes");
+          navigate("/profile");
         });
       }
     );
   };
+
+  if (loading) {
+    return <Spinner />;
+  }
+
   return (
     <section className="p-10">
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -140,12 +160,11 @@ const EditRecipe = () => {
           >
             {percent === 0 ? (
               <div className="flex flex-col items-center justify-center py-6">
-                <MdImage size={48} />
-                <p className="mb-2 text-sm text-gray-500">
-                  <span className="font-semibold">Click to upload</span> or drag
-                  and drop
-                </p>
-                <p className="text-xs text-gray-500">PNG or JPG only</p>
+                {fileRef.name && (
+                  <p className="text-lg font-bold text-primary">
+                    {fileRef.name}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
@@ -162,7 +181,9 @@ const EditRecipe = () => {
                     </div>
                   </>
                 ) : (
-                  <p className="text-lg font-bold text-primary">{fileName}</p>
+                  <p className="text-lg font-bold text-primary">
+                    {fileRef.name}
+                  </p>
                 )}
               </div>
             )}

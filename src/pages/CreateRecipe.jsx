@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
 import { storage } from "../config/firebaseConfig";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { AuthContext } from "../context/AuthContext";
 
 const INSERT_RECIPE = gql`
   mutation InsertRecipe($object: recipes_insert_input!) {
@@ -21,6 +22,7 @@ const INSERT_RECIPE = gql`
 const CreateRecipe = () => {
   const [percent, setPercent] = useState(0);
   const [fileName, setFileName] = useState("");
+  const { userID } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const {
@@ -67,10 +69,11 @@ const CreateRecipe = () => {
                 dishTypes: data.dishTypes === "" ? null : data.dishTypes,
                 cuisines: data.cuisines === "" ? null : data.cuisines,
                 image: url,
+                user_id: userID,
               },
             },
           });
-          navigate("/recipes");
+          navigate("/profile");
         });
       }
     );
@@ -99,6 +102,7 @@ const CreateRecipe = () => {
                   and drop
                 </p>
                 <p className="text-xs text-gray-500">PNG or JPG only</p>
+                <p className="text-primary text-sm">{fileName}</p>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
@@ -113,6 +117,7 @@ const CreateRecipe = () => {
                         style={{ width: `${percent}%` }}
                       />
                     </div>
+                    <p className="text-primary text-sm">{fileName}</p>
                   </>
                 ) : (
                   <p className="text-lg font-bold text-primary">{fileName}</p>
@@ -123,11 +128,14 @@ const CreateRecipe = () => {
               id="dropzone-file"
               type="file"
               className="hidden"
-              {...register("image")}
+              {...register("image", {
+                required: "Image is required",
+              })}
             />
+
+            <p className="text-primary text-sm">{errors.image?.message}</p>
           </label>
         </div>
-
         <div className="flex flex-col w-full mb-3">
           <input
             type="text"
