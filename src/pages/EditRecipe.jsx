@@ -214,29 +214,37 @@ const EditRecipe = () => {
               required: "Summary is required",
             })}
           />
-          <p className="text-primary text-sm">{errors.description?.message}</p>
+          <p className="text-primary text-sm">{errors.summary?.message}</p>
         </div>
-        <div className="flex mb-3">
-          <input
-            type="number"
-            className="me-5 border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
-            placeholder="Add Preparation Time"
-            {...register("readyInMinutes", {
-              required: "Preparation Time is required",
-            })}
-          />
-          <p className="text-primary text-sm">
-            {errors.readyInMinutes?.message}
-          </p>
-          <input
-            type="number"
-            className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
-            placeholder="Add Servings"
-            {...register("servings", {
-              required: "Servings is required",
-            })}
-          />
-          <p className="text-primary text-sm">{errors.servings?.message}</p>
+        <div className="grid grid-cols-2 gap-5 mb-3">
+          <div className="flex flex-col">
+            <input
+              type="number"
+              min={0}
+              className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
+              placeholder="Add Preparation Time"
+              {...register("readyInMinutes", {
+                required: "Preparation Time is required",
+              })}
+            />
+            <p className="text-primary text-sm mt-1">
+              {errors.readyInMinutes?.message}
+            </p>
+          </div>
+          <div className="flex flex-col">
+            <input
+              type="number"
+              min={0}
+              className="border-2 border-gray-300 bg-gray-50 text-gray-900 text-sm rounded-lg block w-full p-3"
+              placeholder="Add Servings"
+              {...register("servings", {
+                required: "Servings is required",
+              })}
+            />
+            <p className="text-primary text-sm mt-1">
+              {errors.servings?.message}
+            </p>
+          </div>
         </div>
         <div className="flex mb-3">
           <select
