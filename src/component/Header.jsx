@@ -67,12 +67,11 @@ const Header = () => {
                 >
                   Profile
                 </NavLink>
-                <button
-                  onClick={logout}
+                <Button
                   className="text-primary bg-white hover:bg-red-100 focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-7 py-2.5"
-                >
-                  Logout
-                </button>
+                  onClick={logout}
+                  label={"Logout"}
+                />
               </>
             ) : (
               <NavLink

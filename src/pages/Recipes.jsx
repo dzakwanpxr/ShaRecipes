@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import searchImg from "../assets/Search.png";
 import Card from "../component/Card";
 import Button from "../component/Button";
 import Spinner from "../component/Spinner";
-import { gql, useSubscription, useLazyQuery } from "@apollo/client";
+import { gql, useSubscription } from "@apollo/client";
 import { dishTypesOptions, cuisineOptions } from "../formOptions";
 
 const GET_RECIPES = gql`
@@ -18,89 +19,46 @@ const GET_RECIPES = gql`
   }
 `;
 
-const SEARCH_RECIPES_AND = gql`
-  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
-    recipes(
-      where: {
-        title: { _ilike: $title }
-        _and: [
-          { cuisines: { _eq: $cuisines } }
-          { dishTypes: { _eq: $dishTypes } }
-        ]
-      }
-    ) {
-      cuisines
-      dishTypes
-      id
-      image
-      title
-    }
-  }
-`;
-
-const SEARCH_RECIPES_OR = gql`
-  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
-    recipes(
-      where: {
-        title: { _ilike: $title }
-        _or: [
-          { cuisines: { _eq: $cuisines } }
-          { dishTypes: { _eq: $dishTypes } }
-        ]
-      }
-    ) {
-      cuisines
-      dishTypes
-      id
-      image
-      title
-    }
-  }
-`;
-
-const SEARCH_RECIPES_TITLE = gql`
-  query SearchRecipe($dishTypes: String, $cuisines: String, $title: String) {
-    recipes(where: { title: { _ilike: $title } }) {
-      cuisines
-      dishTypes
-      id
-      image
-      title
-    }
-  }
-`;
-
 const Recipes = () => {
-  const { register, handleSubmit } = useForm();
-  const [searchRecipesAnd, { data: searchDataAnd, loading: searchLoadingAnd }] =
-    useLazyQuery(SEARCH_RECIPES_AND);
-  const [searchRecipesOr, { data: searchDataOr, loading: searchLoadingOr }] =
-    useLazyQuery(SEARCH_RECIPES_OR);
+  const { register, handleSubmit, reset } = useForm();
   const { data, loading } = useSubscription(GET_RECIPES);
+  const [search, setSearch] = useState("");
+  const [cuisine, setCuisine] = useState("");
+  const [dishType, setDishType] = useState("");
+  const recipes = data?.recipes || [];
 
   const onSubmit = (data) => {
-    if (data.dishTypes && data.cuisines) {
-      searchRecipesAnd({
-        variables: {
-          title: `%${data.search}%`,
-          dishTypes: data.dishTypes,
-          cuisines: data.cuisines,
-        },
-      });
-    } else {
-      searchRecipesOr({
-        variables: {
-          title: `%${data.search}%`,
-          dishTypes: data.dishTypes,
-          cuisines: data.cuisines,
-        },
-      });
-    }
+    setSearch(data.search || "");
+    setCuisine(data.cuisines || "");
+    setDishType(data.dishTypes || "");
   };
 
-  if (loading || searchLoadingAnd || searchLoadingOr) {
+  const onReset = () => {
+    reset();
+    setSearch("");
+    setCuisine("");
+    setDishType("");
+  };
+
+  if (loading) {
     return <Spinner />;
   }
+
+  const filteredRecipes = recipes.filter((recipe) => {
+    const isTitleMatch = recipe.title
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    const isCuisineMatch = cuisine ? recipe.cuisines === cuisine : true;
+    const isDishTypeMatch = dishType ? recipe.dishTypes === dishType : true;
+    return isTitleMatch && isCuisineMatch && isDishTypeMatch;
+  });
+
+  const renderedRecipes =
+    filteredRecipes.length > 0
+      ? filteredRecipes
+      : filteredRecipes.length === 0
+      ? []
+      : recipes;
 
   return (
     <section className="p-10">
@@ -159,6 +117,11 @@ const Recipes = () => {
             ))}
           </select>
           <Button
+            className="focus:outline-none bg-white text-primary hover:bg-red-100 focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-7 py-2.5 md:max-w-1/12"
+            label="Reset"
+            onClick={onReset}
+          />
+          <Button
             className="focus:outline-none text-white bg-primary hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-full text-sm px-7 py-2.5 md:max-w-1/12"
             label="Search"
           />
@@ -166,25 +129,19 @@ const Recipes = () => {
       </form>
       <h1 className="text-3xl font-bold mt-5">Latest Recipes</h1>
 
-      {searchDataAnd?.recipes || searchDataOr?.recipes ? (
-        <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 lg:gap-x-20 ">
-          {(searchDataAnd?.recipes || searchDataOr?.recipes)
-            ?.slice()
-            .reverse()
-            .map((recipe) => (
-              <Card key={recipe.id} item={recipe} />
-            ))}
-        </div>
-      ) : (
-        <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 md:justify-between">
-          {data?.recipes
+      <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 lg:gap-x-20">
+        {renderedRecipes.length > 0 ? (
+          renderedRecipes
             .slice()
             .reverse()
-            .map((recipe) => (
-              <Card key={recipe.id} item={recipe} />
-            ))}
-        </div>
-      )}
+            .map((recipe) => <Card key={recipe.id} item={recipe} />)
+        ) : (
+          <div className="flex flex-col items-center h-screen">
+            <img src={searchImg} alt="search-img" className="w-4/5 md:w-1/3" />
+            <p>No recipes found. Please refine your search or try again.</p>
+          </div>
+        )}
+      </div>
     </section>
   );
 };

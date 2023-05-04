@@ -90,7 +90,7 @@ const Footer = () => {
           />
           <p className="text-primary">{errors.email?.message}</p>
           <Button
-            className=" focus:outline-none text-white bg-primary hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm w-full py-2.5 "
+            className="text-white bg-primary hover:bg-red-800 font-medium rounded-lg text-sm w-full py-2.5 "
             label="Subscribe"
           />
         </form>
