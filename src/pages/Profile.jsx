@@ -62,7 +62,7 @@ const Profile = () => {
               onClick={handleClick}
             />
           </div>
-          <div className="card-container flex flex-row flex-wrap mt-10 gap-y-10 md:gap-x-4 lg:gap-x-5">
+          <div className="card-container flex flex-row flex-wrap mt-5 gap-y-10 lg:gap-x-20">
             {data?.recipes.map((recipe) => (
               <MyCard key={recipe.id} item={recipe} />
             ))}
