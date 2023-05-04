@@ -46,14 +46,19 @@ const UPDATE_RECIPE = gql`
 const EditRecipe = () => {
   const [percent, setPercent] = useState(0);
   const [fileURL, setfileURL] = useState("");
+  const [fileUploaded, setFileUploaded] = useState("");
   const navigate = useNavigate();
   const { id } = useParams();
-  const { loading, error, data } = useQuery(GET_RECIPE, {
+  const { loading, data } = useQuery(GET_RECIPE, {
     variables: { id },
   });
   const [updateRecipe] = useMutation(UPDATE_RECIPE);
   const storage = getStorage();
   const fileRef = ref(storage, fileURL);
+  console.log(fileRef.name);
+  console.log(fileRef);
+  console.log(fileUploaded?.length);
+  console.log(fileUploaded);
 
   const defaultValues = {
     title: "",
@@ -68,6 +73,7 @@ const EditRecipe = () => {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm({
     defaultValues,
   });
@@ -85,7 +91,12 @@ const EditRecipe = () => {
       setValue("dishTypes", data?.recipes[0].dishTypes);
       setValue("cuisines", data?.recipes[0].cuisines);
     }
+    console.log(data);
   }, [data, setValue]);
+
+  useEffect(() => {
+    setFileUploaded(watch("image"));
+  }, [watch("image")]);
 
   const onSubmit = (data) => {
     const storageRef = ref(storage, `/files/${data.image[0].name}`);
@@ -152,34 +163,31 @@ const EditRecipe = () => {
             htmlFor="dropzone-file"
             className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50"
           >
-            {percent === 0 ? (
+            {fileUploaded === fileURL ? (
               <div className="flex flex-col items-center justify-center py-6">
-                {fileRef.name && (
-                  <p className="text-lg font-bold text-primary">
-                    {fileRef.name}
-                  </p>
-                )}
+                <p className="text-lg font-bold text-primary">{fileRef.name}</p>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
-                {percent < 100 ? (
-                  <>
-                    <p className="text-2xl text-primary font-bold mb-2">
-                      {percent}%
-                    </p>
-                    <div className="w-full h-4 mb-4 bg-gray-200">
-                      <div
-                        className="h-4 bg-primary"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </>
-                ) : (
+                {fileUploaded?.length > 0 && (
                   <p className="text-lg font-bold text-primary">
-                    {fileRef.name}
+                    {fileUploaded[0].name}
                   </p>
                 )}
               </div>
+            )}
+            {percent > 0 && (
+              <>
+                <p className="text-2xl text-primary font-bold mb-2">
+                  {percent}%
+                </p>
+                <div className="w-1/2 h-4 mb-4 bg-gray-200">
+                  <div
+                    className="h-4 bg-primary"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </>
             )}
             <input
               id="dropzone-file"

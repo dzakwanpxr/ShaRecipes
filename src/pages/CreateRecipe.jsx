@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { MdImage } from "react-icons/md";
 import { useForm } from "react-hook-form";
 import Button from "../component/Button";
@@ -22,6 +22,8 @@ const INSERT_RECIPE = gql`
 const CreateRecipe = () => {
   const [percent, setPercent] = useState(0);
   const [fileName, setFileName] = useState("");
+  const [fileUploaded, setFileUploaded] = useState("");
+
   const { userID } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -29,9 +31,14 @@ const CreateRecipe = () => {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm();
 
   const [insertRecipe] = useMutation(INSERT_RECIPE);
+
+  useEffect(() => {
+    setFileUploaded(watch("image"));
+  }, [watch("image")]);
 
   const onSubmit = (data) => {
     const storageRef = ref(storage, `/files/${data.image[0].name}`);
@@ -93,7 +100,7 @@ const CreateRecipe = () => {
             htmlFor="dropzone-file"
             className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 rounded-lg cursor-pointer bg-gray-50"
           >
-            {percent === 0 ? (
+            {percent === 0 && fileUploaded?.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6">
                 <MdImage size={48} />
                 <p className="mb-2 text-sm text-gray-500">
@@ -101,27 +108,28 @@ const CreateRecipe = () => {
                   and drop
                 </p>
                 <p className="text-xs text-gray-500">PNG or JPG only</p>
-                <p className="text-primary text-sm">{fileName}</p>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
-                {percent < 100 ? (
-                  <>
-                    <p className="text-2xl text-primary font-bold mb-2">
-                      {percent}%
-                    </p>
-                    <div className="w-full h-4 mb-4 bg-gray-200">
-                      <div
-                        className="h-4 bg-primary"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                    <p className="text-primary text-sm">{fileName}</p>
-                  </>
-                ) : (
-                  <p className="text-lg font-bold text-primary">{fileName}</p>
+                {fileUploaded?.length > 0 && (
+                  <p className="text-lg font-bold text-primary">
+                    {fileUploaded[0].name}
+                  </p>
                 )}
               </div>
+            )}
+            {percent > 0 && (
+              <>
+                <p className="text-2xl text-primary font-bold mb-2">
+                  {percent}%
+                </p>
+                <div className="w-1/2 h-4 mb-4 bg-gray-200">
+                  <div
+                    className="h-4 bg-primary"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </>
             )}
             <input
               id="dropzone-file"
