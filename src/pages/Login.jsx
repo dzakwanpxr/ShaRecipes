@@ -37,7 +37,6 @@ const Login = () => {
       const plainPassword = getValues("password");
 
       const match = bcrypt.compareSync(plainPassword, hashedPassword);
-      console.log(match);
       if (match) {
         const fullName = userData.user[0].fullName;
         const userID = userData.user[0].id;

@@ -5,7 +5,7 @@ import Button from "../component/Button";
 import Spinner from "../component/Spinner";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
-import { gql, useQuery, useSubscription } from "@apollo/client";
+import { gql, useSubscription } from "@apollo/client";
 
 const USER_RECIPE = gql`
   subscription UserRecipe($user_id: uuid!) {
