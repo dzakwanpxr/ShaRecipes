@@ -55,10 +55,6 @@ const EditRecipe = () => {
   const [updateRecipe] = useMutation(UPDATE_RECIPE);
   const storage = getStorage();
   const fileRef = ref(storage, fileURL);
-  console.log(fileRef.name);
-  console.log(fileRef);
-  console.log(fileUploaded?.length);
-  console.log(fileUploaded);
 
   const defaultValues = {
     title: "",

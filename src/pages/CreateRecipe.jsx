@@ -21,7 +21,6 @@ const INSERT_RECIPE = gql`
 
 const CreateRecipe = () => {
   const [percent, setPercent] = useState(0);
-  const [fileName, setFileName] = useState("");
   const [fileUploaded, setFileUploaded] = useState("");
 
   const { userID } = useContext(AuthContext);
@@ -43,23 +42,18 @@ const CreateRecipe = () => {
   const onSubmit = (data) => {
     const storageRef = ref(storage, `/files/${data.image[0].name}`);
     const uploadTask = uploadBytesResumable(storageRef, data.image[0]);
-    setFileName(data.image[0].name);
 
     uploadTask.on(
       "state_changed",
-      //upload progress
       (snapshot) => {
         const percent = Math.round(
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100
         );
         setPercent(percent);
       },
-
-      //upload gagal
       (err) => {
         console.log(err);
       },
-      //upload selesai
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((url) => {
           insertRecipe({

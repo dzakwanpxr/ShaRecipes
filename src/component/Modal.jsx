@@ -15,7 +15,7 @@ const DELETE_RECIPE = gql`
 const Modal = ({ title, id }) => {
   const { closeModal } = useContext(ModalContext);
   const [deleteRecipe] = useMutation(DELETE_RECIPE);
-  const handleDelete = (e) => {
+  const handleDelete = () => {
     deleteRecipe({ variables: { id: id } });
     closeModal();
   };
